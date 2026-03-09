@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyun Paneli</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e24; color: #f5f6fa; padding: 40px; }
+        
+        .container { display: flex; gap: 50px; }
+        .column { flex: 1; max-width: 400px; }
+        
+        h2 { border-bottom: 2px solid #e1b12c; padding-bottom: 10px; display: inline-block; }
+        ul { list-style: none; padding: 0; }
+        li { background: #2f3640; margin: 8px 0; padding: 15px; border-radius: 8px; font-size: 1.1em; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        strong { color: #e1b12c; }
+        .rekor-renk { color: #4cd137; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="column">
+            <h2>🔴 Canlı Skorlar</h2>
+            <ul id="player-list">
+                <li>Bekleniyor...</li>
+            </ul>
+        </div>
+
+        <div class="column">
+            <h2>🏆 Tüm Zamanların Rekorları</h2>
+            <ul id="record-list">
+                <li>Yükleniyor...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const listEl = document.getElementById('player-list');
+
+        socket.on('updateList', (players) => {
+            listEl.innerHTML = "";
+            players.sort((a, b) => b.score - a.score);
+            players.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${p.username}</strong>: ${p.score} Puan`;
+                listEl.appendChild(li);
+            });
+        });
+socket.on('newRecordAdded', () => {
+    console.log("Yeni rekor saptandı, liste güncelleniyor...");
+    rekorlariGetir(); 
+});
+        async function rekorlariGetir() {
+            try {
+                const cevap = await fetch('/api/rekorlar');
+                const rekorlar = await cevap.json();
+                
+                const recordListEl = document.getElementById('record-list');
+                recordListEl.innerHTML = ""; // Yükleniyor yazısını temizle
+                rekorlar.forEach(r => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong class="rekor-renk">${r.oyuncu_adi}</strong>: ${r.skor} Puan`;
+                    recordListEl.appendChild(li);
+                });
+            } catch (hata) {
+                console.error("Rekorlar çekilirken hata oluştu:", hata);
+                document.getElementById('record-list').innerHTML = "<li>Rekorlar yüklenemedi.</li>";
+            }
+        }
+
+        rekorlariGetir();
+    </script>
+
+</body>
+</html>
